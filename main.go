@@ -75,6 +75,11 @@ func main() {
 	// randomly choose a gif from the response
 	r := rand.New(rand.NewSource(time.Now().Unix()))
 	gifCount := len(gifResp.Data)
+	if gifCount == 0 {
+		// if gifCount == 0, rand.Intn(gifCount) will panic
+		fmt.Printf("ಥ_ಥ  no giffy found \n")
+		return
+	}
 	gifChoice := gifResp.Data[r.Intn(gifCount)]
 
 	// get original gif
