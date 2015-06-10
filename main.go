@@ -39,6 +39,12 @@ func main() {
 	}
 	searchTerm := strings.Join(os.Args[1:], " ")
 
+	// create tmp gif file
+	file, err := os.Create("/tmp/tmpGif")
+	if err != nil {
+		log.Fatalf("Error creating tmp file: %s", err.Error())
+	}
+
 	log.Printf("Powered by Giphy")
 	log.Printf("Searching for %s...", searchTerm)
 
@@ -84,11 +90,7 @@ func main() {
 		log.Fatalf("response: %s", body)
 	}
 
-	// create tmp gif file
-	file, err := os.Create("tmpGif")
-	if err != nil {
-		log.Fatalf("Error creating tmp file: %s", err.Error())
-	}
+	// write to tmp file
 	_, err = file.Write(body)
 	if err != nil {
 		log.Fatalf("Error writting gif to tmp file: %s", err.Error())
