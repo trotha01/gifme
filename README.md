@@ -11,3 +11,5 @@ go install github.com/trotha01/gifme
 # Use
 gifme little puppies
 
+# Example
+![](/how_to_gifme.gif)
