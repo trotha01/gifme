@@ -45,7 +45,7 @@ func main() {
 		log.Fatalf("Error creating tmp file: %s", err.Error())
 	}
 
-	log.Printf("Powered by Giphy")
+	log.Printf("Powered By Giphy")
 	log.Printf("Searching for %s...", searchTerm)
 
 	u, err := url.Parse(searchURL)
