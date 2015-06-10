@@ -99,5 +99,6 @@ func main() {
 	// print inline image
 	b64FileName := base64.StdEncoding.EncodeToString([]byte(file.Name()))
 	b64FileContents := base64.StdEncoding.EncodeToString(body)
+	fmt.Println(gifChoice.Images.Original.URL)
 	fmt.Printf("\033]1337;File=name=%s;inline=1:%s\a\n", b64FileName, b64FileContents)
 }
