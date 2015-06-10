@@ -24,16 +24,6 @@ type giphy struct {
 	Data []giphyData `json:"data"`
 }
 
-type MyJsonName struct {
-	Data []struct {
-		Images struct {
-			Original struct {
-				URL string `json:"url"`
-			} `json:"original"`
-		} `json:"images"`
-	} `json:"data"`
-}
-
 const searchURL = "http://api.giphy.com/v1/gifs/search"
 const apiKey = "dc6zaTOxFJmzC"
 
@@ -53,7 +43,6 @@ func main() {
 		log.Fatalf("response: %s", body)
 	}
 
-	// gifResp := MyJsonName{}
 	gifResp := giphy{}
 	json.Unmarshal(body, &gifResp)
 	log.Printf("Gif: %s", body)
