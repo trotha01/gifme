@@ -24,7 +24,7 @@ gifme little puppies
 - ```mkdir -p ~/go/src```
 - Add to .bash_profile or .bashrc (osx or linux respectively):
 ```
-export GOPATH="~/go"
+export GOPATH=~/go
 export PATH="$PATH:$GOPATH/bin"
 export GOROOT="/usr/local/go"
 ```
