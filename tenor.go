@@ -1,99 +1,86 @@
 package main
 
-const searchURL = "http://api.tenor.com/v1/search"
-const apiKey = "CH97GP0E42LR"
+import (
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"net/url"
+)
+
+const tenorSearchURL = "http://api.tenor.com/v1/search"
+const tenorAPIKey = "CH97GP0E42LR"
 
 // TenorResponse is the gif response from tenor.com
 type TenorResponse struct {
-	Weburl  string      `json:"weburl"`
 	Results []GifResult `json:"results"`
-	Next    string      `json:"next"`
 }
 
 // GifResult is an individual gif result
 type GifResult struct {
-	Hascaption bool          `json:"hascaption,omitempty"`
-	Tags       []interface{} `json:"tags"`
-	URL        string        `json:"url"`
-	Media      []Media       `json:"media"`
-	Created    float64       `json:"created"`
-	Shares     int           `json:"shares"`
-	Itemurl    string        `json:"itemurl"`
-	Composite  interface{}   `json:"composite"`
-	Hasaudio   bool          `json:"hasaudio"`
-	Title      string        `json:"title"`
-	ID         string        `json:"id"`
+	URL   string  `json:"url"`
+	Media []Media `json:"media"`
 }
 
 // Media is a return value in a tenor response
 type Media struct {
-	Nanomp4 struct {
-		URL      string  `json:"url"`
-		Dims     []int   `json:"dims"`
-		Duration float64 `json:"duration"`
-		Preview  string  `json:"preview"`
-		Size     int     `json:"size"`
-	} `json:"nanomp4"`
-	Nanowebm struct {
-		URL     string `json:"url"`
-		Dims    []int  `json:"dims"`
-		Preview string `json:"preview"`
-		Size    int    `json:"size"`
-	} `json:"nanowebm"`
-	Tinygif struct {
-		URL     string `json:"url"`
-		Dims    []int  `json:"dims"`
-		Preview string `json:"preview"`
-		Size    int    `json:"size"`
-	} `json:"tinygif"`
-	Tinymp4 struct {
-		URL      string  `json:"url"`
-		Dims     []int   `json:"dims"`
-		Duration float64 `json:"duration"`
-		Preview  string  `json:"preview"`
-		Size     int     `json:"size"`
-	} `json:"tinymp4"`
-	Tinywebm struct {
-		URL     string `json:"url"`
-		Dims    []int  `json:"dims"`
-		Preview string `json:"preview"`
-		Size    int    `json:"size"`
-	} `json:"tinywebm"`
-	Webm struct {
-		URL     string `json:"url"`
-		Dims    []int  `json:"dims"`
-		Preview string `json:"preview"`
-		Size    int    `json:"size"`
-	} `json:"webm"`
 	Gif struct {
-		URL     string `json:"url"`
-		Dims    []int  `json:"dims"`
-		Preview string `json:"preview"`
-		Size    int    `json:"size"`
+		URL string `json:"url"`
 	} `json:"gif"`
-	Mp4 struct {
-		URL      string  `json:"url"`
-		Dims     []int   `json:"dims"`
-		Duration float64 `json:"duration"`
-		Preview  string  `json:"preview"`
-		Size     int     `json:"size"`
-	} `json:"mp4"`
-	Loopedmp4 struct {
-		URL      string  `json:"url"`
-		Dims     []int   `json:"dims"`
-		Duration float64 `json:"duration"`
-		Preview  string  `json:"preview"`
-	} `json:"loopedmp4"`
-	Mediumgif struct {
-		URL     string `json:"url"`
-		Dims    []int  `json:"dims"`
-		Preview string `json:"preview"`
-		Size    int    `json:"size"`
-	} `json:"mediumgif"`
-	Nanogif struct {
-		URL     string `json:"url"`
-		Dims    []int  `json:"dims"`
-		Preview string `json:"preview"`
-		Size    int    `json:"size"`
-	} `json:"nanogif"`
+}
+
+func tenorGetGifs(searchTerm string, count int) (TenorResponse, error) {
+	gifResp := TenorResponse{}
+
+	// Create Tenor http request
+	u, err := url.Parse(tenorSearchURL)
+	if err != nil {
+		log.Fatalf("url parse error: %s", err.Error())
+	}
+	q := u.Query()
+	q.Set("key", tenorAPIKey)
+	q.Add("q", searchTerm)
+	// Always get 50 gifs and pick randomly from results
+	q.Add("limit", "50")
+	q.Add("safesearch", "moderate")
+	u.RawQuery = q.Encode()
+
+	// Send request for gifs
+	resp, err := http.Get(u.String())
+	if err != nil {
+		return gifResp, fmt.Errorf("Tenor http request err: %s", err.Error())
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return gifResp, fmt.Errorf("Tenor http request non 200 response: %s (%s)", resp.Status, body)
+	}
+
+	// Unmarshal response
+	err = json.Unmarshal(body, &gifResp)
+	if err != nil {
+		return gifResp, fmt.Errorf("Error unmarshalling Tenor resposne: %s", body)
+	}
+
+	if len(gifResp.Results) == 0 {
+		return gifResp, fmt.Errorf("ಥ_ಥ  no giffy found")
+	}
+
+	return gifResp, nil
+}
+
+func tenorGetImage(url string) ([]byte, error) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, fmt.Errorf("Error getting gif from Tenor: %s", err.Error())
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("Tenor gif http request non 200 response: %s (%s)", resp.Status, body)
+	}
+	return body, nil
 }
