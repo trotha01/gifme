@@ -38,7 +38,7 @@ func main() {
 		},
 	}
 	rootCmd.Flags().IntP("count", "c", 1, "number of gifs to return")
-	rootCmd.Flags().StringP("engine", "e", "", "gif engine to use 'giphy' or 'tenor'. If not specified Tenor is searched first and Gifme if there is an error from Tenor")
+	rootCmd.Flags().StringP("engine", "e", "", "gif engine to use 'giphy' or 'tenor'. If not specified, Tenor is searched first and Gifme if there is an error from Tenor")
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
