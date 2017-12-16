@@ -5,21 +5,24 @@ const apiKey = "CH97GP0E42LR"
 
 // TenorResponse is the gif response from tenor.com
 type TenorResponse struct {
-	Weburl  string `json:"weburl"`
-	Results []struct {
-		Hascaption bool          `json:"hascaption,omitempty"`
-		Tags       []interface{} `json:"tags"`
-		URL        string        `json:"url"`
-		Media      []Media       `json:"media"`
-		Created    float64       `json:"created"`
-		Shares     int           `json:"shares"`
-		Itemurl    string        `json:"itemurl"`
-		Composite  interface{}   `json:"composite"`
-		Hasaudio   bool          `json:"hasaudio"`
-		Title      string        `json:"title"`
-		ID         string        `json:"id"`
-	} `json:"results"`
-	Next string `json:"next"`
+	Weburl  string      `json:"weburl"`
+	Results []GifResult `json:"results"`
+	Next    string      `json:"next"`
+}
+
+// GifResult is an individual gif result
+type GifResult struct {
+	Hascaption bool          `json:"hascaption,omitempty"`
+	Tags       []interface{} `json:"tags"`
+	URL        string        `json:"url"`
+	Media      []Media       `json:"media"`
+	Created    float64       `json:"created"`
+	Shares     int           `json:"shares"`
+	Itemurl    string        `json:"itemurl"`
+	Composite  interface{}   `json:"composite"`
+	Hasaudio   bool          `json:"hasaudio"`
+	Title      string        `json:"title"`
+	ID         string        `json:"id"`
 }
 
 // Media is a return value in a tenor response

@@ -11,9 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -28,10 +26,20 @@ func main() {
 			if len(args) < 1 {
 				return errors.New("requires at least one arg, what gif are you looking for?")
 			}
+			count, err := cmd.Flags().GetInt("count")
+			if err != nil {
+				log.Fatalf("error getting 'count' flag: %s", err)
+			}
+			if count < 0 {
+				return fmt.Errorf("'count' flag must not be negative, got :%d", count)
+			}
+			if count > 20 {
+				log.Fatalf("only up to 20 gifs at a time please, got %d", count)
+			}
 			return nil
 		},
 	}
-	rootCmd.Flags().Int("count", 1, "number of gifs to return")
+	rootCmd.Flags().IntP("count", "c", 1, "number of gifs to return")
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
@@ -40,19 +48,9 @@ func main() {
 }
 
 func gifSearch(cmd *cobra.Command, args []string) {
-	random := false
-
 	count, err := cmd.Flags().GetInt("count")
 	if err != nil {
 		log.Fatalf("error getting 'count' flag: %s", err)
-	}
-	if count > 20 {
-		log.Fatalf("only up to 20 gifs at a time please")
-	}
-	// If count is not specified, choose a random one out of 50
-	if count == 1 {
-		count = 50
-		random = true
 	}
 
 	searchTerm := strings.Join(args[0:], " ")
@@ -68,7 +66,8 @@ func gifSearch(cmd *cobra.Command, args []string) {
 	q := u.Query()
 	q.Set("key", apiKey)
 	q.Add("q", searchTerm)
-	q.Add("limit", strconv.Itoa(count))
+	// Always get 50 gifs and pick randomly from results
+	q.Add("limit", "50")
 	q.Add("safesearch", "moderate")
 	u.RawQuery = q.Encode()
 	resp, err := http.Get(u.String())
@@ -79,6 +78,7 @@ func gifSearch(cmd *cobra.Command, args []string) {
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if resp.StatusCode != 200 {
+		// TODO: use giphy as a backup here
 		log.Printf("response code: %s", resp.Status)
 		log.Fatalf("response: %s", body)
 	}
@@ -92,77 +92,36 @@ func gifSearch(cmd *cobra.Command, args []string) {
 		os.Exit(0)
 	}
 
-	if random {
-		printRandom(gifResp)
-	} else {
-		printAll(gifResp)
-	}
+	printCount(gifResp, count)
 }
 
-func printRandom(gifResp TenorResponse) {
-	r := rand.New(rand.NewSource(time.Now().Unix()))
-	result := gifResp.Results[r.Intn(len(gifResp.Results))]
-	media := result.Media[0]
-	url := media.Gif.URL
-	body := getImage(url)
+func printCount(gifResp TenorResponse, count int) {
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	perm := r.Perm(len(gifResp.Results))
 
-	// create tmp gif file
-	file, err := os.Create("/tmp/tmpGif")
-	if err != nil {
-		log.Fatalf("Error creating tmp file: %s", err.Error())
-	}
-
-	// write to tmp file
-	_, err = file.Write(body)
-	if err != nil {
-		log.Fatalf("Error writting gif to tmp file: %s", err.Error())
-	}
-
-	// print inline image
-	printImage(url, file, body)
-}
-
-func printAll(gifResp TenorResponse) {
-	// Get all gif urls at once but
-	// print one image at a time
-	var wg sync.WaitGroup
-	printCh := make(chan func())
-
-	go func(wg *sync.WaitGroup, printCh chan func()) {
-		for f := range printCh {
-			f()
-			wg.Done()
-		}
-	}(&wg, printCh)
-
-	// loop through responses
-	wg.Add(len(gifResp.Results))
-	for _, result := range gifResp.Results {
+	for i := 0; i < count; i++ {
+		// get the next random result
+		fmt.Println("returning:", perm[i])
+		result := gifResp.Results[perm[i]]
 		media := result.Media[0]
-		go func(wg *sync.WaitGroup, printCh chan func(), media Media) {
-			url := media.Gif.URL
-			body := getImage(url)
+		url := media.Gif.URL
+		body := getImage(url)
 
-			// create tmp gif file
-			file, err := os.Create("/tmp/tmpGif")
-			if err != nil {
-				log.Fatalf("Error creating tmp file: %s", err.Error())
-			}
+		// create tmp gif file
+		file, err := os.Create("/tmp/tmpGif")
+		if err != nil {
+			log.Fatalf("Error creating tmp file: %s", err.Error())
+		}
 
-			// write to tmp file
-			_, err = file.Write(body)
-			if err != nil {
-				log.Fatalf("Error writting gif to tmp file: %s", err.Error())
-			}
+		// write to tmp file
+		_, err = file.Write(body)
+		if err != nil {
+			log.Fatalf("Error writting gif to tmp file: %s", err.Error())
+		}
 
-			// print inline image
-			printCh <- func() { printImage(url, file, body) }
-		}(&wg, printCh, media)
+		// print inline image
+		printImage(url, file, body)
 	}
-
-	// wait for all images to be printed
-	wg.Wait()
-	close(printCh)
 }
 
 func getImage(url string) []byte {
