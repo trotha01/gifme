@@ -9,7 +9,20 @@ see [iterm inline images](http://iterm2.com/images.html#/section/home)
 go get github.com/trotha01/gifme
 
 # Use
-gifme little puppies
+```gifme little puppies```
+
+**Help**
+``` gifme -h ```
+```
+gifsearch is a way to find gifs
+
+Usage:
+  gifsearch [flags]
+
+  Flags:
+    -c, --count int       number of gifs to return (default 1)
+    -e, --engine string   gif engine to use 'giphy' or 'tenor'. If not specified, Tenor is searched first and Gifme if there is an error from Tenor
+```
 
 # Example
 ![](/how_to_gifme.gif)
